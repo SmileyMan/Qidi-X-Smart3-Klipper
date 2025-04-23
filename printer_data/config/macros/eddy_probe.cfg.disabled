@@ -78,8 +78,10 @@ gcode:
 [gcode_macro BED_MESH_CALIBRATE]
 rename_existing: _BED_MESH_CALIBRATE
 gcode: 
-       _BED_MESH_CALIBRATE horizontal_move_z=2 METHOD=rapid_scan {rawparams}
-       G28 X Y
+    G1 X90 Y90 Z20
+    _BED_MESH_CALIBRATE horizontal_move_z=2 METHOD=rapid_scan ADAPTIVE=1 {rawparams}
+    #G28 X Y
+    G1 X90 Y90 Z20
 
 [gcode_macro CALIBRATE_DD]
 description: Mobile axis macro
@@ -93,11 +95,30 @@ gcode:
 [gcode_macro G28]
 rename_existing: G28.1
 gcode:
-  G28.1 {rawparams}
-  {% if not rawparams or (rawparams and 'Z' in rawparams) %}
-    PROBE
-    SET_Z_FROM_PROBE
-  {% endif %}
+    {% if not rawparams or ('Y' in rawparams and 'X' in rawparams) %}
+      SEND_MESSAGE TYPE=INFO MSG="Homing Y"
+      G28.1 Y
+      SEND_MESSAGE TYPE=INFO MSG="Homing X"
+      G28.1 X
+    {% elif 'Y' in rawparams %}
+      SEND_MESSAGE TYPE=INFO MSG="Homing Y"
+      G28.1 Y
+    {% elif 'X' in rawparams %}
+      SEND_MESSAGE TYPE=INFO MSG="Homing X"
+      G28.1 X
+    {% endif %}
+    {% if not rawparams or (rawparams and 'Z' in rawparams) %}
+      SEND_MESSAGE TYPE=INFO MSG="Centering X and Y"
+      G1 X90 Y90
+      SEND_MESSAGE TYPE=INFO MSG="Homing Z"
+      G28.1 Z
+      G1 Z10
+      SEND_MESSAGE TYPE=INFO MSG="Probing and setting Z"
+      PROBE
+      SET_Z_FROM_PROBE
+      SEND_MESSAGE TYPE=INFO MSG="Homing End"
+      G1 Z20
+    {% endif %}
 
 [gcode_macro SET_Z_FROM_PROBE]
 gcode:
