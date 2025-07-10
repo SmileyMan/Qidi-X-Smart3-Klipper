@@ -1,0 +1,53 @@
+#[bltouch]
+#sensor_pin:^Toolhead:gpio21
+#control_pin:Toolhead:gpio11
+
+#[probe]
+#pin: ^!Toolhead:gpio21
+#x_offset:27
+#y_offset:3.5
+#z_offset: 0.0
+#speed: 15
+#lift_speed: 25
+#samples: 2
+#samples_result: average
+#sample_retract_dist: 1.5
+#samples_tolerance: 0.025
+#samples_tolerance_retries:3
+
+
+[output_pin _probe_enable]
+pin: SHT36:gpio24
+value: 0
+
+[probe]
+pin: ^!SHT36:gpio22 
+deactivate_on_each_sample: False
+x_offset: -21
+y_offset: 13
+speed: 30.0
+lift_speed: 50
+samples: 2
+samples_result: average
+sample_retract_dist: 1.0
+samples_tolerance: 0.025
+samples_tolerance_retries: 5
+activate_gcode:
+  _probe_deploy
+  G4 P500
+  SEND_MESSAGE TYPE=INFO MSG="Probe deployed"
+deactivate_gcode:
+  _probe_stow
+  SEND_MESSAGE TYPE=INFO MSG="Probe stowed"
+
+[gcode_macro _probe_deploy]
+description: Deploy Microprobe pin
+gcode:
+  SET_PIN PIN=_probe_enable VALUE=0
+  G4 P500
+  SET_PIN PIN=_probe_enable VALUE=1
+
+[gcode_macro _probe_stow]
+description: Stow Microprobe pin
+gcode:
+  SET_PIN PIN=_probe_enable VALUE=0
